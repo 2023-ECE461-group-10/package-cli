@@ -20,12 +20,10 @@ export class Issue {
 	created_at:string|null;
 	updated_at:string|null;
 	closed_at:string|null;
-	total_events:number|null;
-	constructor(created_at: string|null, updated_at: string|null, closed_at: string|null, total_events: number|null) {
+	constructor(created_at: string|null, updated_at: string|null, closed_at: string|null) {
 		this.created_at = created_at;
 		this.updated_at = updated_at;
 		this.closed_at = closed_at;
-		this.total_events = total_events;
 	}
 }
 
@@ -119,19 +117,36 @@ export class GithubRepository extends Repository {
 	}
 	
 	// Commenting out because unused - Responsive Maintainer task incomplete by Robert.
-	/*
+	
 	async get_issues():Promise<Issue[]> {
-		type IteratorResponseType = GetResponseTypeFromEndpointMethod<
-		typeof this.octokit.paginate.iterator>;
+		type IssueResponseType = GetResponseTypeFromEndpointMethod<
+		typeof this.octokit.rest.issues.get>;
 		
-		type EventsResponseType = GetResponseTypeFromEndpointMethod<
-		typeof this.octokit.rest.issues.listEvents>;
-		type EventsResponseDataType = GetResponseDataTypeFromEndpointMethod<
-		typeof this.octokit.rest.issues.listEvents>;
+
 
 		var rv:Issue[] = [];
+		let response
+		try {
+			response = await this.octokit.request('GET /repos/{owner}/{repo}/issues', {
+				owner: this.owner,
+				repo: this.repo,
+				per_page: 100,
+			});
+		} catch (error) {
+			logger.log('info', "Fetching issue failed 1x");
+		}
+
+		if (response) {
+			const issueData = response?.data;
+			for (const issue of issueData) {
+				rv.push(new Issue(issue.created_at, issue.updated_at, issue.closed_at))
+			}
+		}
+
+		console.log(response?.data.length)
+
 		// uses octokit REST API to fetch issues list
-		const iterator:IteratorResponseType = this.octokit.paginate.iterator(this.octokit.rest.issues.listForRepo, {
+		/* const iterator:IteratorResponseType = this.octokit.paginate.iterator(this.octokit.rest.issues.listForRepo, {
 		  owner: this.owner,
 		  repo: this.repo,
 		  per_page: 100,
@@ -159,13 +174,13 @@ export class GithubRepository extends Repository {
 			}
 		} catch (error) {
 			logger.log('info', "Fetching iterator of issues failed!");
-		}
+		} */
 	
 		return new Promise((resolve) => {
 			resolve(rv);
 		});
 	} 
-	*/
+	
 	
 	async get_license():Promise<string | null> {
 		type ContentResponseType = GetResponseTypeFromEndpointMethod<

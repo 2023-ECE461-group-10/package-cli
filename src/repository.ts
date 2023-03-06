@@ -32,9 +32,9 @@ export abstract class Repository {
     abstract get_license():Promise<string | null>;
     
     // Commenting out because unused - Responsive Maintainer task incomplete by Robert.
-    /*
+    
     abstract get_issues():Promise<Issue[]>;
-    */
+    
    
 	/* get_readme() function
 		returns absolute filepath of downloaded readme in this project

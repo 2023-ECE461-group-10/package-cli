@@ -387,7 +387,7 @@ export function get_weighted_sum(scores:ScoresWithoutNet):ScoresWithNet {
 	}
 	if (responsive_maintainer_score_calc == null) {
 		responsive_maintainer_score_calc = 0;
-		responsive_maintainer_score_disp = -1;
+		responsive_maintainer_score_disp = 0;
 	}
 	else {
 		responsive_maintainer_score_disp = responsive_maintainer_score_calc;

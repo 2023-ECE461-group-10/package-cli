@@ -397,65 +397,26 @@ export class CorrectnessMetric extends Metric {
 export class ResponsiveMetric extends Metric {
     async get_metric(repo: Repository):Promise<GroupMetric> {
         var final_score:NullNum = null;
-        /*
+        
         const issue_arr:Issue[] = await repo.get_issues(); // get all issues
 
-        var tot_response_time = 0; // time measured in ms
-        var num_events = 0;
-
-        for (var issue of issue_arr) {
-
-            if(issue.created_at == null) {
-                logger.log("info", "%Issue does not have creation date") // issue was never created, skip it
-                continue
-            }
-
-            if(issue.total_events == null || issue.total_events == 0) {
-                logger.log('info', "issue has no events")
-                num_events += 1
-            } else {
-                num_events += issue.total_events; // Add number of events to total count
-            }
-
-            var created_time = new Date(issue.created_at).getTime() // Get time issue was created
-            
-
-            if(issue.closed_at != null) {
-                tot_response_time += new Date(issue.closed_at).getTime() - created_time;
-            } else if(issue.updated_at != null) {
-                tot_response_time += new Date(issue.updated_at).getTime() - created_time;
-            } else {
-                logger.log('debug', "Issue never updated or closed");
-                tot_response_time += 120000000; // add 2 weeks in time, should round to 1.0 in score
-            }
-            
-        }
-
-        // if there were no events, responsiveness is ambiguous, return medium value
-        if(num_events == 0) {
-            logger.log('info', 'No events in issue list');
-            final_score = 0.5;
-        }
+		const issueCount = issue_arr.length;
+		const responsiveIssues = issue_arr.filter((issue) => issue.created_at !== issue.updated_at);
+		const responsiveIssueCount = responsiveIssues.length;
 
         // get avg response time, then score, round to 2 digits
         if(final_score == null) {
             // get avg response time for repo Ex: originally in ms, the average response time for cloudbinary is 967.4 hours
-            logger.log('debug', "Premodified score: %d", tot_response_time / num_events);
-            logger.log("debug", "avg response time in h: %d", (tot_response_time/num_events/ 3600000));
+            logger.log('debug', "Issue Count: %d", issueCount);
+            logger.log("debug", "Responsive Issue Count: %d", responsiveIssueCount);
+			logger.log("debug", "Responsiveness: %d", responsiveIssueCount / issueCount);
 
             // round final score calc Ex: That will result in a score so low it rounds to 0
-            final_score = Math.round(this.sigmoid(tot_response_time / num_events / 3600000)*100)/100; 
+            final_score = issueCount === 0 ? 0 : responsiveIssueCount / issueCount;
         }
-        */
+        
         return new Promise((resolve) => {
 			resolve(new GroupMetric(repo.url, "RESPONSIVE_SCORE", final_score));
 		});
     }
-    /*
-    // Takes value in ms, numbers less than 1 hour are extremely close to 0
-    // numbers greater than 1 week are extremely close to 1
-    sigmoid(x: number) {
-        return (-1/(1 + Math.exp(0.04*(-x+168)))+1);
-    }
-    */
 }
