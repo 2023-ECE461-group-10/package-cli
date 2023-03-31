@@ -1,5 +1,5 @@
 import { createLogger, format, transports } from "winston";
-import { GroupMetric, Metric, LicenseMetric, RampUpMetric, BusFactorMetric, CorrectnessMetric, ResponsiveMetric } from "./metric"
+import { GroupMetric, Metric, LicenseMetric, RampUpMetric, BusFactorMetric, CorrectnessMetric, ResponsiveMetric, VersionMetric } from "./metric"
 import { GithubRepository } from "./github_repository"
 import { Repository } from "./repository"
 
@@ -205,9 +205,10 @@ class MetricsCollection {
 	bus_factor_metric:BusFactorMetric;
 	correctness_metric: CorrectnessMetric;
 	responsiveness_metric: ResponsiveMetric;
+	version_metric: VersionMetric;
 		
 	constructor(owner_and_repo:OwnerAndRepo, license_metric:LicenseMetric, ramp_up_metric:RampUpMetric, 
-	bus_factor_metric:BusFactorMetric, correctness_metric:CorrectnessMetric, responsiveness_metric:ResponsiveMetric) {
+	bus_factor_metric:BusFactorMetric, correctness_metric:CorrectnessMetric, responsiveness_metric:ResponsiveMetric, version_metric:VersionMetric) {
 		this.owner_and_repo = owner_and_repo;
 		this.git_repo = new GithubRepository(owner_and_repo.url, owner_and_repo.owner, owner_and_repo.repo, owner_and_repo.cloning_url);
 		this.license_metric = license_metric;
@@ -215,6 +216,7 @@ class MetricsCollection {
 		this.bus_factor_metric = bus_factor_metric;
 		this.correctness_metric = correctness_metric;
 		this.responsiveness_metric = responsiveness_metric;
+		this.version_metric = version_metric;
 	}
 
 	async get_metrics():Promise<Promise<GroupMetric>[]> {
@@ -224,6 +226,7 @@ class MetricsCollection {
 		promises_of_metrics[2] = this.bus_factor_metric.get_metric(this.git_repo);
 		promises_of_metrics[3] = this.correctness_metric.get_metric(this.git_repo);
 		promises_of_metrics[4] = this.responsiveness_metric.get_metric(this.git_repo);
+		promises_of_metrics[5] = this.version_metric.get_metric(this.git_repo);
 		// this.promises_of_metrics.push(this.<new_metric>.get_metric(this.git_repo));
 		return promises_of_metrics;
 	}
@@ -247,7 +250,7 @@ export async function process_urls(filename:string, callback:calcResults) {
 		if (owner_and_repo != null) {
 			// var metrics_collection:MetricsCollection = new MetricsCollection(owner_and_repo, new LicenseMetric(), new <NewMetric()>...);
 			var metrics_collection:MetricsCollection = new MetricsCollection(owner_and_repo, new LicenseMetric(), 
-			new RampUpMetric(), new BusFactorMetric(), new CorrectnessMetric(), new ResponsiveMetric());
+			new RampUpMetric(), new BusFactorMetric(), new CorrectnessMetric(), new ResponsiveMetric(), new VersionMetric());
 			var tmp_promises:Promise<GroupMetric>[] = await metrics_collection.get_metrics();
 			promises_of_metrics = promises_of_metrics.concat(tmp_promises);
 		}
@@ -297,13 +300,15 @@ export class ScoresWithoutNet {
 	bus_factor_score:NullNum;
 	correctness_score:NullNum;
 	responsive_maintainer_score:NullNum;
-	constructor(url:string|null, lc:NullNum, ru:NullNum, bf:NullNum, cs:NullNum, rm:NullNum) {
+	version_score:NullNum;
+	constructor(url:string|null, lc:NullNum, ru:NullNum, bf:NullNum, cs:NullNum, rm:NullNum, vr:NullNum) {
 		this.url = url;
 		this.license_score = lc;
 		this.ramp_up_score = ru;
 		this.bus_factor_score = bf;
 		this.correctness_score = cs;
 		this.responsive_maintainer_score = rm;
+		this.version_score = vr;
 	}
 }
 
@@ -313,13 +318,15 @@ export class ScoresWithNet {
 	bus_factor_score:number;
 	correctness_score:number;
 	responsive_maintainer_score:number;
+	version_score:number;
 	net_score:number;
-	constructor(lc:number, ru:number, bf:number, cs:number, rm:number, ns:number) {
+	constructor(lc:number, ru:number, bf:number, cs:number, rm:number, vr:number, ns:number) {
 		this.license_score = lc;
 		this.ramp_up_score = ru;
 		this.bus_factor_score = bf;
 		this.correctness_score = cs;
 		this.responsive_maintainer_score = rm;
+		this.version_score = vr;
 		this.net_score = ns;
 	}
 }
@@ -332,13 +339,15 @@ class OutputObject {
 	BUS_FACTOR_SCORE:number;
 	RESPONSIVE_MAINTAINER_SCORE:number;
 	LICENSE_SCORE:number;
-	constructor(url:string, ns:number, ru:number, cs:number, bf:number, rm:number, ls:number) {
+	VERSION_SCORE:number;
+	constructor(url:string, ns:number, ru:number, cs:number, bf:number, rm:number, ls:number, vr:number) {
 		this.URL = url;
 		this.LICENSE_SCORE = ls;
 		this.RAMP_UP_SCORE = ru;
 		this.BUS_FACTOR_SCORE = bf;
 		this.CORRECTNESS_SCORE = cs;
 		this.RESPONSIVE_MAINTAINER_SCORE = rm;
+		this.VERSION_SCORE = vr;
 		this.NET_SCORE = ns;
 	}
 }
@@ -350,11 +359,13 @@ export function get_weighted_sum(scores:ScoresWithoutNet):ScoresWithNet {
 	var bus_factor_score_calc:NullNum = scores.bus_factor_score;
 	var correctness_score_calc:NullNum = scores.correctness_score;
 	var responsive_maintainer_score_calc:NullNum = scores.responsive_maintainer_score;
+	var version_score_calc:NullNum = scores.version_score;
 	var license_score_disp:number;
 	var ramp_up_score_disp:number;
 	var bus_factor_score_disp:number;
 	var correctness_score_disp:number;
 	var responsive_maintainer_score_disp:number;
+	var version_score_disp:number;
 	
 	//@Priyanka change implemented metrics to display 0 , unimplemented -1
 	if (license_score_calc == null) {
@@ -392,19 +403,26 @@ export function get_weighted_sum(scores:ScoresWithoutNet):ScoresWithNet {
 	else {
 		responsive_maintainer_score_disp = responsive_maintainer_score_calc;
 	}
-	net_score = license_score_calc * ((0.4 * bus_factor_score_calc) + (0.2 * ramp_up_score_calc) + 
-				(0.2 * correctness_score_calc) + (0.2 * responsive_maintainer_score_calc));
+	if (version_score_calc == null) {
+		version_score_calc = 0;
+		version_score_disp = 0;
+	}
+	else {
+		version_score_disp = version_score_calc;
+	}
+	net_score = license_score_calc * ((0.3 * bus_factor_score_calc) + (0.2 * ramp_up_score_calc) + 
+				(0.2 * correctness_score_calc) + (0.2 * responsive_maintainer_score_calc) + (0.2 * version_score_calc));
 	return new ScoresWithNet(license_score_disp, ramp_up_score_disp, bus_factor_score_disp, 
-							correctness_score_disp, responsive_maintainer_score_disp, net_score);
+							correctness_score_disp, responsive_maintainer_score_disp, version_score_disp, net_score);
 }
 
 function calc_final_result(metrics_array:GroupMetric[]):void {
 	logger.log('info', "\nMetrics array of objects for each metric: \n" + JSON.stringify(metrics_array, null, 4));
 	var scores_map_with_net = new Map<string, ScoresWithNet>();
 	
-	for (var i = 0; i < metrics_array.length; i += 5) {
-		var single_url_metrics:GroupMetric[] = metrics_array.slice(i, i+5);
-		var scores_without_net:ScoresWithoutNet = new ScoresWithoutNet(null, null, null, null, null, null);
+	for (var i = 0; i < metrics_array.length; i += 6) {
+		var single_url_metrics:GroupMetric[] = metrics_array.slice(i, i+6);
+		var scores_without_net:ScoresWithoutNet = new ScoresWithoutNet(null, null, null, null, null, null, null);
 		var url_val:string = "";
 
 		for (var j = 0; j < single_url_metrics.length; j++) {
@@ -470,6 +488,15 @@ function calc_final_result(metrics_array:GroupMetric[]):void {
 						scores_without_net.responsive_maintainer_score = single_url_metrics[j].metric_val;
 					}
 					break;
+				case(5):
+					// version score
+					if (single_url_metrics[j] == null) {
+						scores_without_net.version_score = null;
+					}
+					else {
+						scores_without_net.version_score = single_url_metrics[j].metric_val;
+					}
+					break;
 			}
 		}
 		var net_score_obj:ScoresWithNet = get_weighted_sum(scores_without_net);
@@ -489,7 +516,7 @@ function calc_final_result(metrics_array:GroupMetric[]):void {
 			var output_object:OutputObject = new OutputObject(key, curr_url_scores.net_score,
 			curr_url_scores.ramp_up_score, curr_url_scores.correctness_score,
 			curr_url_scores.bus_factor_score, curr_url_scores.responsive_maintainer_score,
-			curr_url_scores.license_score);
+			curr_url_scores.license_score, curr_url_scores.version_score);
 			console.log(JSON.stringify(output_object));
 		}
 	});

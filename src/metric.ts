@@ -420,3 +420,65 @@ export class ResponsiveMetric extends Metric {
 		});
     }
 }
+
+export class VersionMetric extends Metric {
+    async get_metric(repo: Repository):Promise<GroupMetric> {
+        let score:number =  0; // subscore for readme
+        let packages:any = await repo.get_package_json(); //get the readme
+
+        //read me calcs
+        if(packages == null){
+            logger.log('info', "No Package found");
+            score = 1;
+        }
+        else{
+            score = await versionCalc(packages); //calc the readme score
+        }
+
+        return new Promise((resolve) => {
+            resolve(new GroupMetric(repo.url, "RAMP_UP_SCORE", score));
+        });
+    }
+}
+
+async function versionCalc(packages: any): Promise<number> {
+	let score: number =  0; // subscore for readme
+	let numberPinnedToMajorMinor: number = 0;
+	let totalNumberOfDependencies = 0;
+
+	if (packages?.dependencies) {
+		totalNumberOfDependencies += Object.keys(packages.dependencies).length;
+	}
+	if (packages?.devDependencies) {
+		totalNumberOfDependencies += Object.keys(packages.devDependencies).length;
+	}
+	if (packages?.peerDependencies) {
+		totalNumberOfDependencies += Object.keys(packages.peerDependencies).length;
+	}
+	if (packages?.optionalDependencies) {
+		totalNumberOfDependencies += Object.keys(packages.optionalDependencies).length;
+	}
+
+	numberPinnedToMajorMinor += await countPinnedToMajorMinor(packages?.dependencies);
+	numberPinnedToMajorMinor += await countPinnedToMajorMinor(packages?.devDependencies);
+	numberPinnedToMajorMinor += await countPinnedToMajorMinor(packages?.peerDependencies);
+	numberPinnedToMajorMinor += await countPinnedToMajorMinor(packages?.optionalDependencies);
+
+	score = numberPinnedToMajorMinor / totalNumberOfDependencies;
+
+	logger.log('info', "Version pinning score " + score);
+	return score;
+}
+
+async function countPinnedToMajorMinor(dependencies: any): Promise<number> {
+	let count: number = 0;
+	const re = /^\d+\.\d+\.(x|X)$/
+
+	for (const dependency in dependencies) {
+		if (re.test(dependencies[dependency])) {
+			count++;
+		}
+	}
+
+	return count;
+}

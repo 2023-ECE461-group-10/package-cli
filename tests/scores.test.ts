@@ -29,7 +29,7 @@ global.logger = logger;
 describe('Get weighted sum test', () => {
 	test('all 1', () => {
 		var no_net:ScoresWithoutNet = new ScoresWithoutNet('https://github.com/cloudinary/cloudinary_npm',
-		1, 1, 1, 1, 1);
+		1, 1, 1, 1, 1, 1);
 		const nscore = get_weighted_sum(no_net);
 		expect(nscore.net_score).toEqual(1);
 	});
@@ -38,7 +38,7 @@ describe('Get weighted sum test', () => {
 describe('Get weighted sum test', () => {
 	test('license 0', () => {
 		var no_net:ScoresWithoutNet = new ScoresWithoutNet('https://github.com/cloudinary/cloudinary_npm',
-		0, 1, 1, 1, 1);
+		0, 1, 1, 1, 1, 1);
 		const nscore = get_weighted_sum(no_net);
 		expect(nscore.net_score).toEqual(0);
 	});
@@ -47,7 +47,7 @@ describe('Get weighted sum test', () => {
 describe('Get weighted sum test', () => {
 	test('all 0', () => {
 		var no_net:ScoresWithoutNet = new ScoresWithoutNet('https://github.com/cloudinary/cloudinary_npm',
-		0, 0, 0, 0, 0);
+		0, 0, 0, 0, 0, 0);
 		const nscore = get_weighted_sum(no_net);
 		expect(nscore.net_score).toEqual(0);
 	});
@@ -56,7 +56,7 @@ describe('Get weighted sum test', () => {
 describe('Get weighted sum test', () => {
 	test('null implemented score', () => {
 		var no_net:ScoresWithoutNet = new ScoresWithoutNet('https://github.com/cloudinary/cloudinary_npm',
-		null, 0, 0, 0, 0);
+		null, 0, 0, 0, 0, 0);
 		const nscore = get_weighted_sum(no_net);
 		expect(nscore.license_score).toEqual(0);
 	});
@@ -66,7 +66,7 @@ describe('Get weighted sum test', () => {
 describe('Get weighted sum test', () => {
 	test('null unimplemented score', () => {
 		var no_net:ScoresWithoutNet = new ScoresWithoutNet('https://github.com/cloudinary/cloudinary_npm',
-		0, 0, 0, 0, null);
+		0, 0, 0, 0, null, 0);
 		const nscore = get_weighted_sum(no_net);
 		expect(nscore.responsive_maintainer_score).toEqual(-1);
 	});
